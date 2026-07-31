@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TikTok Video Downloader – No Watermark</title>
+
+    <!-- Font Awesome 6 (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Google Font (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+
+    <style>
+        /* ────────────── RESET & BASE ────────────── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #fe2c55;
+            --primary-dark: #d91a3f;
+            --secondary: #25f4ee;
+            --dark: #0b0b1a;
+            --dark-card: #12122a;
+            --dark-surface: #1a1a3a;
+            --gray: #8a8aa0;
+            --light-gray: #e8e8f0;
+            --white: #ffffff;
+            --radius: 16px;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-family: inherit;
+        }
+        input {
+            font-family: inherit;
+            outline: none;
+            border: none;
+        }
+
+        /* ────────────── SCROLLBAR ────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* ────────────── NAVBAR ────────────── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(11, 11, 26, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0 24px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--white);
+        }
+
+        .navbar-brand i {
+            color: var(--primary);
+            font-size: 26px;
+            filter: drop-shadow(0 0 12px rgba(254, 44, 85, 0.4));
+        }
+
+        .navbar-brand span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* desktop nav links */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            list-style: none;
+        }
+
+        .nav-links li a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--gray);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links li a:hover,
+        .nav-links li a.active {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-links li a i {
+            font-size: 15px;
+        }
+
+        /* hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: transparent;
+            padding: 8px 6px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .hamburger span {
+            display: block;
+            width: 26px;
+            height: 2.5px;
+            background: var(--white);
+            border-radius: 4px;
+            transition: var(--transition);
+            transform-origin: center;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ────────────── SIDEBAR (mobile) ────────────── */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .sidebar-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 280px;
+            max-width: 80vw;
+            height: 100vh;
+            z-index: 1001;
+            background: var(--dark-card);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 24px 20px;
+            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 800;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand i {
+            color: var(--primary);
+            font-size: 26px;
+        }
+        .sidebar-brand span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar-close {
+            margin-left: auto;
+            background: transparent;
+            color: var(--gray);
+            font-size: 22px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        .sidebar-close:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .sidebar-nav li a:hover,
+        .sidebar-nav li a.active {
+            color: var(--white);
+            background: rgba(254, 44, 85, 0.12);
+        }
+
+        .sidebar-nav li a i {
+            width: 22px;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .sidebar-footer {
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 12px;
+            color: var(--gray);
+            text-align: center;
+        }
+
+        /* ────────────── MAIN CONTENT ────────────── */
+        .main-content {
+            flex: 1;
+            padding-top: 70px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ────────────── HERO ────────────── */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(254, 44, 85, 0.10) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(37, 244, 238, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 720px;
+            width: 100%;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(254, 44, 85, 0.12);
+            border: 1px solid rgba(254, 44, 85, 0.20);
+            padding: 6px 18px 6px 14px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 24px;
+            letter-spacing: 0.3px;
+        }
+
+        .hero-badge i {
+            font-size: 14px;
+        }
+
+        .hero h1 {
+            font-size: clamp(32px, 6vw, 56px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, var(--primary), #ff6b8a, var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: clamp(15px, 1.4vw, 18px);
+            color: var(--gray);
+            max-width: 540px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+        }
+
+        /* ────────────── DOWNLOADER CARD ────────────── */
+        .downloader-card {
+            background: var(--dark-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            transition: var(--transition);
+        }
+
+        .downloader-card:hover {
+            border-color: rgba(255, 255, 255, 0.10);
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .input-group .input-wrap {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .input-group .input-wrap i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .input-group .input-wrap input {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            color: var(--white);
+            font-size: 15px;
+            transition: var(--transition);
+        }
+
+        .input-group .input-wrap input::placeholder {
+            color: var(--gray);
+        }
+
+        .input-group .input-wrap input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 4px rgba(254, 44, 85, 0.10);
+        }
+
+        .input-group .input-wrap input:focus+i {
+            color: var(--primary);
+        }
+
+        .input-group .input-wrap input:focus~i {
+            color: var(--primary);
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--white);
+            transition: var(--transition);
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(254, 44, 85, 0.30);
+            min-height: 58px;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(254, 44, 85, 0.40);
+        }
+
+        .btn-download:active {
+            transform: scale(0.97);
+        }
+
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-download i {
+            font-size: 18px;
+        }
+
+        /* ────────────── STATUS / RESULT ────────────── */
+        .status-area {
+            margin-top: 20px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--gray);
+            flex-wrap: wrap;
+        }
+
+        .status-area .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.06);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-area .success {
+            color: var(--secondary);
+        }
+        .status-area .error {
+            color: var(--primary);
+        }
+
+        .result-card {
+            display: none;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            animation: fadeUp 0.4s ease;
+        }
+
+        .result-card.show {
+            display: flex;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card .video-info {
+            flex: 1;
+            min-width: 140px;
+            text-align: left;
+        }
+
+        .result-card .video-info .title {
+            font-weight: 600;
+            font-size: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-card .video-info .meta {
+            font-size: 13px;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .result-card .btn-save {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            background: var(--secondary);
+            color: var(--dark);
+            transition: var(--transition);
+        }
+
+        .result-card .btn-save:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 24px rgba(37, 244, 238, 0.25);
+        }
+
+        /* ────────────── STEPS ────────────── */
+        .steps-section {
+            max-width: 720px;
+            width: 100%;
+            margin: 48px auto 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .steps-section h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .steps-section h3 i {
+            color: var(--primary);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .step-item {
+            background: var(--dark-card);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .step-item:hover {
+            border-color: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .step-item .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(254, 44, 85, 0.12);
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .step-item .step-icon {
+            font-size: 28px;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .step-item h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .step-item p {
+            font-size: 12px;
+            color: var(--gray);
+            line-height: 1.4;
+        }
+
+        /* ────────────── FOOTER ────────────── */
+        .footer {
+            text-align: center;
+            padding: 32px 24px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 13px;
+            color: var(--gray);
+            margin-top: auto;
+        }
+
+        .footer a {
+            color: var(--gray);
+            transition: var(--transition);
+        }
+        .footer a:hover {
+            color: var(--white);
+        }
+
+        .footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .footer .footer-links a {
+            font-size: 13px;
+        }
+
+        /* ────────────── RESPONSIVE ────────────── */
+        @media (max-width: 820px) {
+            .nav-links {
+                display: none;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .navbar {
+                padding: 0 16px;
+            }
+            .downloader-card {
+                padding: 24px 18px;
+            }
+            .input-group .input-wrap {
+                min-width: 100%;
+            }
+            .input-group .btn-download {
+                width: 100%;
+                justify-content: center;
+            }
+            .hero {
+                padding: 30px 16px 40px;
+            }
+            .steps-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-brand {
+                font-size: 17px;
+            }
+            .navbar-brand i {
+                font-size: 22px;
+            }
+            .hero h1 {
+                font-size: 28px;
+            }
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+            .result-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            .result-card .video-info {
+                text-align: center;
+            }
+            .sidebar {
+                width: 260px;
+                padding: 20px 16px;
+            }
+        }
+
+        @media (min-width: 821px) {
+            .hamburger {
+                display: none;
+            }
+            .sidebar-overlay,
+            .sidebar {
+                display: none !important;
+            }
+        }
+
+        /* ────────────── UTILITY ────────────── */
+        .fade-in {
+            animation: fadeUp 0.5s ease;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── NAVBAR ─── -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="navbar-brand">
+            <i class="fab fa-tiktok"></i>
+            <span>SaveTok</span>
+        </div>
+
+        <ul class="nav-links">
+            <li><a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#" data-page="disclaimer"><i class="fas fa-shield-alt"></i> Disclaimer</a></li>
+            <li><a href="#" data-page="privacy"><i class="fas fa-lock"></i> Privacy</a></li>
+            <li><a href="#" data-page="terms"><i class="fas fa-file-contract"></i> Terms</a></li>
+            <li><a href="#" data-page="about"><i class="fas fa-info-circle"></i> About</a></li>
+        </ul>
+
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <!-- ─── SIDEBAR (mobile) ─── -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Mobile navigation">
+        <div class="sidebar-brand">
+            <i class="fab fa-tiktok"></i>
+            <span>SaveTok</span>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#" data-page="disclaimer"><i class="fas fa-shield-alt"></i> Disclaimer</a></li>
+            <li><a href="#" data-page="privacy"><i class="fas fa-lock"></i> Privacy</a></li>
+            <li><a href="#" data-page="terms"><i class="fas fa-file-contract"></i> Terms</a></li>
+            <li><a href="#" data-page="about"><i class="fas fa-info-circle"></i> About</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            &copy; 2026 SaveTok &bull; No Watermark
+        </div>
+    </aside>
+
+    <!-- ─── MAIN ─── -->
+    <main class="main-content" id="mainContent">
+
+        <!-- HERO -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+
+                <div class="hero-badge">
+                    <i class="fas fa-bolt"></i> No Watermark &bull; HD Quality
+                </div>
+
+                <h1>
+                    Download TikTok Videos<br />
+                    <span class="highlight">No Watermark</span>
+                </h1>
+
+                <p>
+                    Paste any TikTok video URL and download it in HD quality
+                    — completely free, no watermark, no sign-up required.
+                </p>
+
+                <!-- DOWNLOADER CARD -->
+                <div class="downloader-card">
+                    <div class="input-group">
+                        <div class="input-wrap">
+                            <i class="fas fa-link"></i>
+                            <input
+                            type="url"
+                            id="videoUrl"
+                            placeholder="Paste TikTok video URL here…"
+                            autocomplete="off"
+                            spellcheck="false"
+                            value="https://vt.tiktok.com/ZS46yviSq/"
+                            />
+                        </div>
+                        <button class="btn-download" id="downloadBtn">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+
+                    <!-- status -->
+                    <div class="status-area" id="statusArea">
+                        <span id="statusText">Paste a TikTok URL and click Download</span>
+                    </div>
+
+                    <!-- result -->
+                    <div class="result-card" id="resultCard">
+                        <div class="video-info">
+                            <div class="title" id="videoTitle">Video Title</div>
+                            <div class="meta" id="videoMeta">HD &bull; No Watermark</div>
+                        </div>
+                        <button class="btn-save" id="saveBtn">
+                            <i class="fas fa-save"></i> Save Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEPS -->
+                <div class="steps-section">
+                    <h3><i class="fas fa-compass"></i> How to use</h3>
+                    <div class="steps-grid">
+                        <div class="step-item">
+                            <span class="step-num">1</span>
+                            <span class="step-icon"><i class="fas fa-copy"></i></span>
+                            <h4>Copy URL</h4>
+                            <p>Copy the link of any TikTok video from the app or browser.</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">2</span>
+                            <span class="step-icon"><i class="fas fa-paste"></i></span>
+                            <h4>Paste &amp; Download</h4>
+                            <p>Paste the URL above and click the Download button.</p>
+                        </div>
+                        <div class="step-item">
+                            <span class="step-num">3</span>
+                            <span class="step-icon"><i class="fas fa-check-circle"></i></span>
+                            <h4>Save to Device</h4>
+                            <p>Click “Save Video” to download the HD file with no watermark.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- footer -->
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="#" data-page="disclaimer">Disclaimer</a>
+                <a href="#" data-page="privacy">Privacy</a>
+                <a href="#" data-page="terms">Terms</a>
+                <a href="#" data-page="about">About</a>
+            </div>
+            <p>&copy; 2026 SaveTok &mdash; TikTok Downloader &bull; No Watermark</p>
+        </footer>
+
+    </main>
+
+    <script>
+        /* ──────────────────────────────────────────────────────────────
+           CONFIG — Using the API from your PHP snippet (exact key & host)
+           ────────────────────────────────────────────────────────────── */
+        const CONFIG = {
+            // ⚠️  You MUST subscribe to this API on RapidAPI for this key to work.
+            //     Go to: https://rapidapi.com/rockethearts/api/tiktok-downloader-download-tiktok-videos-without-watermark
+            //     and activate a (free) plan.
+            RAPIDAPI_KEY: '62e05b1908msh4ed53ca01bb68fep1b9d76jsndcc5abd1b53d',
+            RAPIDAPI_HOST: 'tiktok-downloader-download-tiktok-videos-without-watermark.p.rapidapi.com',
+            API_ENDPOINT: 'https://tiktok-downloader-download-tiktok-videos-without-watermark.p.rapidapi.com/rich_response/index',
+        };
+
+        /* ──────────────────────────────────────────────────────────────
+           DOM REFS
+           ────────────────────────────────────────────────────────────── */
+        const videoUrlInput = document.getElementById('videoUrl');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusText = document.getElementById('statusText');
+        const statusArea = document.getElementById('statusArea');
+        const resultCard = document.getElementById('resultCard');
+        const videoTitle = document.getElementById('videoTitle');
+        const videoMeta = document.getElementById('videoMeta');
+        const saveBtn = document.getElementById('saveBtn');
+
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarClose = document.getElementById('sidebarClose');
+
+        const navLinks = document.querySelectorAll('.nav-links a, .sidebar-nav a');
+        const footerLinks = document.querySelectorAll('.footer-links a');
+
+        let currentVideoUrl = '';
+        let currentDownloadUrl = '';
+
+        /* ──────────────────────────────────────────────────────────────
+           SIDEBAR / MOBILE MENU
+           ────────────────────────────────────────────────────────────── */
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('open');
+            hamburgerBtn.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('open');
+            hamburgerBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        hamburgerBtn.addEventListener('click', () => {
+            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+        });
+
+        sidebarOverlay.addEventListener('click', closeSidebar);
+        sidebarClose.addEventListener('click', closeSidebar);
+
+        // close on link click (mobile)
+        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                closeSidebar();
+            });
+        });
+
+        /* ──────────────────────────────────────────────────────────────
+           NAVIGATION (page switching)
+           ────────────────────────────────────────────────────────────── */
+        function setActivePage(page) {
+            // update nav links
+            document.querySelectorAll('.nav-links a, .sidebar-nav a').forEach(el => {
+                el.classList.toggle('active', el.dataset.page === page);
+            });
+
+            // update hero content based on page
+            const hero = document.querySelector('.hero');
+            const heroContent = hero.querySelector('.hero-content');
+            const steps = document.querySelector('.steps-section');
+
+            // hide steps for non-home pages
+            if (page === 'home') {
+                steps.style.display = '';
+                heroContent.innerHTML = `
+              <div class="hero-badge">
+                <i class="fas fa-bolt"></i> No Watermark &bull; HD Quality
+              </div>
+              <h1>
+                Download TikTok Videos<br />
+                <span class="highlight">No Watermark</span>
+              </h1>
+              <p>
+                Paste any TikTok video URL and download it in HD quality
+                — completely free, no watermark, no sign-up required.
+              </p>
+              <div class="downloader-card">
+                <div class="input-group">
+                  <div class="input-wrap">
+                    <i class="fas fa-link"></i>
+                    <input
+                      type="url"
+                      id="videoUrl"
+                      placeholder="Paste TikTok video URL here…"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </div>
+                  <button class="btn-download" id="downloadBtn">
+                    <i class="fas fa-download"></i> Download
+                  </button>
+                </div>
+                <div class="status-area" id="statusArea">
+                  <span id="statusText">Paste a TikTok URL and click Download</span>
+                </div>
+                <div class="result-card" id="resultCard">
+                  <div class="video-info">
+                    <div class="title" id="videoTitle">Video Title</div>
+                    <div class="meta" id="videoMeta">HD &bull; No Watermark</div>
+                  </div>
+                  <button class="btn-save" id="saveBtn">
+                    <i class="fas fa-save"></i> Save Video
+                  </button>
+                </div>
+              </div>
+            `;
+                // re-bind events after re-render
+                bindDownloaderEvents();
+                return;
+            }
+
+            // other pages: show info
+            steps.style.display = 'none';
+
+            const titles = {
+                disclaimer: 'Disclaimer',
+                privacy: 'Privacy Policy',
+                terms: 'Terms of Service',
+                about: 'About SaveTok'
+            };
+
+            const contents = {
+                disclaimer: `
+              <p style="color:var(--gray);max-width:600px;margin:0 auto;line-height:1.7;font-size:15px;">
+                <strong style="color:var(--white);">Disclaimer</strong><br><br>
+                SaveTok is a third-party tool and is not affiliated with TikTok or ByteDance.
+                All videos are downloaded directly from public TikTok links. Users are responsible
+                for ensuring they have the right to download and use any content.
+                This service is provided "as is" without any warranties.
+              </p>
+            `,
+                privacy: `
+              <p style="color:var(--gray);max-width:600px;margin:0 auto;line-height:1.7;font-size:15px;">
+                <strong style="color:var(--white);">Privacy Policy</strong><br><br>
+                We do <strong>not</strong> store, share, or log any videos or user data.
+                All processing happens in real-time via the RapidAPI service.
+                No cookies are used for tracking. Your privacy matters to us.
+              </p>
+            `,
+                terms: `
+              <p style="color:var(--gray);max-width:600px;margin:0 auto;line-height:1.7;font-size:15px;">
+                <strong style="color:var(--white);">Terms of Service</strong><br><br>
+                By using SaveTok, you agree to use this tool for lawful purposes only.
+                You must not download copyrighted content without permission.
+                We reserve the right to modify or discontinue the service at any time.
+              </p>
+            `,
+                about: `
+              <p style="color:var(--gray);max-width:600px;margin:0 auto;line-height:1.7;font-size:15px;">
+                <strong style="color:var(--white);">About SaveTok</strong><br><br>
+                SaveTok is a free, open-source web app that lets you download TikTok videos
+                in HD quality with <strong>no watermark</strong>. Powered by the
+                <a href="https://rapidapi.com" target="_blank" style="color:var(--secondary);">RapidAPI</a>
+                TikTok No Watermark API. Built with ❤️ for content creators and casual users alike.
+              </p>
+            `
+            };
+
+            heroContent.innerHTML = `
+            <div style="padding:40px 0;">
+              <h1 style="font-size:clamp(28px,4vw,42px);margin-bottom:16px;">${titles[page] || 'Page'}</h1>
+              ${contents[page] || '<p style="color:var(--gray);">Page content</p>'}
+              <br>
+              <button onclick="window.location.href='#'" style="
+                display:inline-flex;align-items:center;gap:8px;
+                padding:12px 28px;border-radius:40px;
+                background:var(--primary);color:#fff;font-weight:600;
+                border:none;font-size:14px;transition:0.3s;
+                margin-top:12px;
+              " onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fas fa-arrow-left"></i> Back to Home
+              </button>
+            </div>
+          `;
+        }
+
+        // nav click handlers
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                setActivePage(page);
+                // update URL hash
+                if (page === 'home') {
+                    history.pushState(null, '', '#');
+                } else {
+                    history.pushState(null, '', '#' + page);
+                }
+                closeSidebar();
+            });
+        });
+
+        footerLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                setActivePage(page);
+                history.pushState(null, '', '#' + page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // handle back/forward
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.replace('#', '') || 'home';
+            setActivePage(hash);
+        });
+
+        // initial page
+        (function initPage() {
+            const hash = window.location.hash.replace('#', '') || 'home';
+            setActivePage(hash);
+        })();
+
+        /* ──────────────────────────────────────────────────────────────
+           BIND DOWNLOADER EVENTS (re-run after re-render)
+           ────────────────────────────────────────────────────────────── */
+        function bindDownloaderEvents() {
+            const urlInput = document.getElementById('videoUrl');
+            const btn = document.getElementById('downloadBtn');
+            const stText = document.getElementById('statusText');
+            const stArea = document.getElementById('statusArea');
+            const resCard = document.getElementById('resultCard');
+            const vTitle = document.getElementById('videoTitle');
+            const vMeta = document.getElementById('videoMeta');
+            const sBtn = document.getElementById('saveBtn');
+
+            if (!urlInput || !btn) return;
+
+            // remove old listeners by cloning
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            const newUrlInput = urlInput.cloneNode(true);
+            urlInput.parentNode.replaceChild(newUrlInput, urlInput);
+
+            // re-fetch refs
+            const finalBtn = document.getElementById('downloadBtn');
+            const finalInput = document.getElementById('videoUrl');
+            const finalStatusText = document.getElementById('statusText');
+            const finalStatusArea = document.getElementById('statusArea');
+            const finalResultCard = document.getElementById('resultCard');
+            const finalTitle = document.getElementById('videoTitle');
+            const finalMeta = document.getElementById('videoMeta');
+            const finalSaveBtn = document.getElementById('saveBtn');
+
+            // ── download click ──
+            finalBtn.addEventListener('click', async function() {
+                const url = finalInput.value.trim();
+                if (!url) {
+                    setStatus('Please paste a TikTok video URL.', 'error');
+                    return;
+                }
+
+                // validate TikTok URL
+                if (!url.includes('tiktok.com') && !url.includes('vt.tiktok')) {
+                    setStatus('Invalid TikTok URL. Please paste a valid link.', 'error');
+                    return;
+                }
+
+                setStatus('Fetching video… please wait.', 'loading');
+                finalBtn.disabled = true;
+                finalResultCard.classList.remove('show');
+
+                try {
+                    const videoData = await fetchTikTokVideo(url);
+                    if (videoData && videoData.video_url) {
+                        currentVideoUrl = videoData.video_url;
+                        currentDownloadUrl = videoData.video_url;
+
+                        // show result
+                        finalTitle.textContent = videoData.title || 'TikTok Video';
+                        finalMeta.textContent = 'HD • No Watermark';
+                        finalResultCard.classList.add('show');
+
+                        setStatus('✅ Ready to download!', 'success');
+                    } else {
+                        setStatus('No video found. Please check the URL.', 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setStatus('Error: ' + (err.message || 'Something went wrong.'), 'error');
+                } finally {
+                    finalBtn.disabled = false;
+                }
+            });
+
+            // ── save / download ──
+            finalSaveBtn.addEventListener('click', function() {
+                if (!currentDownloadUrl) {
+                    setStatus('No video available. Please download first.', 'error');
+                    return;
+                }
+                // trigger download
+                downloadFile(currentDownloadUrl);
+            });
+
+            // enter key
+            finalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finalBtn.click();
+                }
+            });
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           STATUS HELPER
+           ────────────────────────────────────────────────────────────── */
+        function setStatus(msg, type = 'info') {
+            const el = document.getElementById('statusText');
+            const area = document.getElementById('statusArea');
+            if (!el) return;
+
+            // clear old
+            area.querySelectorAll('.spinner, .success, .error').forEach(c => c.remove());
+
+            if (type === 'loading') {
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner';
+                area.prepend(spinner);
+                el.textContent = msg;
+                el.style.color = '';
+            } else if (type === 'success') {
+                el.textContent = msg;
+                el.style.color = 'var(--secondary)';
+            } else if (type === 'error') {
+                el.textContent = msg;
+                el.style.color = 'var(--primary)';
+            } else {
+                el.textContent = msg;
+                el.style.color = 'var(--gray)';
+            }
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           IMPROVED VIDEO EXTRACTOR — handles URLs without .mp4
+           ────────────────────────────────────────────────────────────── */
+        function extractVideoUrlFromResponse(data) {
+            // Helper: try to match a URL that is likely a video
+            function matchVideoUrl(str) {
+                if (typeof str !== 'string') return null;
+                // First try to match .mp4
+                let match = str.match(/https?:\/\/[^\s"']+\.mp4[^\s"']*/i);
+                if (match) return match[0];
+                // Then try to match any URL that contains "video" in the path
+                match = str.match(/https?:\/\/[^\s"']*video[^\s"']*/i);
+                if (match) return match[0];
+                // Finally, match any URL that looks like it could be a video (e.g., tiktokcdn)
+                match = str.match(/https?:\/\/[^\s"']*tiktokcdn[^\s"']*/i);
+                if (match) return match[0];
+                return null;
+            }
+
+            // 1. If data is a string, try to parse as JSON
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (e) {
+                    // Not JSON – search directly
+                    return matchVideoUrl(data);
+                }
+            }
+
+            // 2. Directly check for common video fields (including arrays)
+            const videoKeys = ['video', 'video_url', 'no_watermark', 'hd', 'play', 'source', 'url', 'download'];
+            for (const key of videoKeys) {
+                if (data[key] !== undefined && data[key] !== null) {
+                    const val = data[key];
+                    if (Array.isArray(val) && val.length > 0) {
+                        for (const item of val) {
+                            if (typeof item === 'string') {
+                                const found = matchVideoUrl(item);
+                                if (found) return found;
+                            }
+                        }
+                    } else if (typeof val === 'string') {
+                        const found = matchVideoUrl(val);
+                        if (found) return found;
+                    } else if (typeof val === 'object') {
+                        const found = deepSearch(val);
+                        if (found) return found;
+                    }
+                }
+            }
+
+            // 3. Recursive deep search (handles nested objects and arrays)
+            function deepSearch(obj) {
+                if (typeof obj === 'string') {
+                    return matchVideoUrl(obj);
+                }
+                if (Array.isArray(obj)) {
+                    for (const item of obj) {
+                        const found = deepSearch(item);
+                        if (found) return found;
+                    }
+                    return null;
+                }
+                if (typeof obj === 'object' && obj !== null) {
+                    for (const key in obj) {
+                        const val = obj[key];
+                        const found = deepSearch(val);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            let url = deepSearch(data);
+            if (url) return url;
+
+            // 4. Last resort: stringify and regex
+            const jsonString = JSON.stringify(data);
+            const match = jsonString.match(/https?:\/\/[^\s"']+\.mp4[^\s"']*/i) ||
+                           jsonString.match(/https?:\/\/[^\s"']*video[^\s"']*/i) ||
+                           jsonString.match(/https?:\/\/[^\s"']*tiktokcdn[^\s"']*/i);
+            if (match) return match[0];
+
+            return null;
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           API CALL — Using the provided endpoint and key
+           ────────────────────────────────────────────────────────────── */
+        async function fetchTikTokVideo(url) {
+            const apiKey = CONFIG.RAPIDAPI_KEY;
+            if (!apiKey || apiKey === 'YOUR_RAPIDAPI_KEY_HERE') {
+                throw new Error('Please set your RapidAPI key in the CONFIG object.');
+            }
+
+            const endpoint = CONFIG.API_ENDPOINT + '?url=' + encodeURIComponent(url);
+
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-key': apiKey,
+                    'x-rapidapi-host': CONFIG.RAPIDAPI_HOST,
+                },
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`API error (${response.status}): ${errText || response.statusText}`);
+            }
+
+            // Try to parse as JSON
+            let data;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                data = await response.text();
+            }
+
+            console.log('📦 Full API response:', data);
+
+            // Check for API-level error
+            if (data && typeof data === 'object' && data.code && data.code !== 0 && data.code !== 200) {
+                const msg = data.msg || data.message || 'Unknown API error';
+                throw new Error(`API returned error: ${msg} (code: ${data.code})`);
+            }
+
+            // Extract video URL using the improved extractor
+            const videoUrl = extractVideoUrlFromResponse(data);
+            if (!videoUrl) {
+                const preview = typeof data === 'string' ? data.substring(0, 200) : JSON.stringify(data).substring(0, 200);
+                throw new Error(`Could not find a video URL in the API response. Response preview: ${preview}...`);
+            }
+
+            // Try to get a title
+            let title = 'TikTok Video';
+            if (data && typeof data === 'object') {
+                if (data.title) title = data.title;
+                else if (data.desc) title = data.desc;
+                else if (data.description) title = data.description;
+                else if (data.data && data.data.title) title = data.data.title;
+                else if (data.data && data.data.desc) title = data.data.desc;
+                else if (data.result && data.result.title) title = data.result.title;
+            }
+
+            // Ensure URL is absolute
+            let finalUrl = videoUrl;
+            if (finalUrl.startsWith('//')) {
+                finalUrl = 'https:' + finalUrl;
+            }
+
+            return {
+                video_url: finalUrl,
+                title: title,
+            };
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           DOWNLOAD FILE (via anchor)
+           ────────────────────────────────────────────────────────────── */
+        function downloadFile(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.download = 'tiktok-video.mp4';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           INIT — bind events on first load
+           ────────────────────────────────────────────────────────────── */
+        bindDownloaderEvents();
+        window.setActivePage = setActivePage;
+
+        console.log('🚀 SaveTok ready with the provided API!');
+        console.log('🔑 Using API key:', CONFIG.RAPIDAPI_KEY);
+        console.log('⚠️  If you get a 403, you need to subscribe to the API on RapidAPI.');
+        console.log('👉 https://rapidapi.com/rockethearts/api/tiktok-downloader-download-tiktok-videos-without-watermark');
+    </script>
+
+</body>
+</html>
